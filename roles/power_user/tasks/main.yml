@@ -1,0 +1,107 @@
+---
+# task to install zsh
+- name: Install zsh
+  become: true
+  ansible.builtin.apt:
+    name: zsh
+    state: present
+
+# task to change user shell to zsh
+- name: Change user shell to zsh
+  become: true
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    shell: /bin/zsh
+
+# Add this debug task before the existing tasks to verify variables
+- name: Debug user variables
+  ansible.builtin.debug:
+    msg:
+      - "ansible_user: {{ ansible_user }}"
+
+- name: Configure ZSH and plugins
+  become: false
+  block:
+    - name: Ensure .zshrc file exists
+      ansible.builtin.file:
+        path: /home/{{ ansible_user }}/.zshrc
+        state: touch
+        mode: "0644"
+
+    - name: Install Oh My Zsh
+      ansible.builtin.shell:
+        cmd: sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+        creates: /home/{{ ansible_user }}/.oh-my-zsh
+
+    - name: Install zsh-autosuggestions plugin # noqa: latest
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: /home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+        depth: 1
+
+    - name: Install zsh-completions plugin # noqa: latest
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-completions.git
+        dest: /home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-completions
+        depth: 1
+
+    - name: Install zsh-syntax-highlighting plugin # noqa: latest
+      ansible.builtin.git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+        dest: /home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+        depth: 1
+
+    - name: Install Powerlevel10k theme
+      ansible.builtin.git:
+        repo: https://github.com/romkatv/powerlevel10k.git
+        dest: /home/{{ ansible_user }}/.oh-my-zsh/custom/themes/powerlevel10k
+        depth: 1
+
+    - name: Set Powerlevel10k theme in .zshrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.zshrc
+        regexp: ^ZSH_THEME=
+        line: ZSH_THEME="powerlevel10k/powerlevel10k"
+      notify: Reload zsh
+
+    - name: Use oh-my-zsh plugins
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.zshrc
+        regexp: ^plugins=
+        line: plugins=(git aws web-search encode64 zsh-autosuggestions zsh-syntax-highlighting)
+      notify: Reload zsh
+
+    - name: Add user home bin to path
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.zshrc
+        regexp: '^export PATH='
+        line: 'export PATH=$PATH:/home/{{ ansible_user }}/bin'
+        create: yes
+      notify: Reload zsh
+
+- name: Install power user packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ power_user_packages }}"
+  tags:
+    - packages
+    - power_user
+
+# copy file static-content/vimrc to users ~/.vimrc
+- name: Debug directory variables
+  become: false
+  ansible.builtin.debug:
+    msg:
+      - "Copying .vimrc from {{ playbook_dir }}/static-content/vimrc to /home/{{ ansible_user }}/.vimrc"
+
+- name: Copy .vimrc to user's home directory
+  become: false
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/static-content/vimrc"
+    dest: /home/{{ ansible_user }}/.vimrc
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+    backup: true
+    force: false

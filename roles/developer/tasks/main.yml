@@ -1,0 +1,139 @@
+---
+# tasks for developer role
+- name: Install developer packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - gcc
+      - make
+      - python3
+      - python3-pip
+    state: present
+
+- name: Install golang
+  ansible.builtin.apt:
+    name:
+      - golang
+    state: present
+
+- name: Install elixir
+  ansible.builtin.apt:
+    name:
+      - erlang
+      - elixir
+      - erlang-doc
+    state: present
+
+# TODO Ruby and Rails -- move to it's own file?
+- name: Ruby and Rails environment setup
+  become: false
+  block:
+    - name: Ensure rbenv directory exists
+      ansible.builtin.file:
+        path: /home/{{ ansible_user }}/.rbenv
+        state: directory
+        mode: 0755
+
+    - name: Add rbenv to .zshrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.zshrc
+        regexp: ^eval "\$\(rbenv init -\)"
+        line: eval "$(rbenv init -)"
+      notify: Reload zsh
+
+    - name: Install ruby
+      ansible.builtin.command: rbenv install {{ ruby_version }}
+      args:
+        creates: /home/{{ ansible_user }}/.rbenv/versions/{{ ruby_version }}
+      register: ruby_install_result
+
+    - name: Check for ruby installation failure
+      ansible.builtin.fail:
+        msg: "Ruby installation failed: {{ ruby_install_result }}"
+      when: ruby_install_result.rc != 0
+
+    - name: Set global ruby version
+      ansible.builtin.command: rbenv global {{ ruby_version }}
+
+    - name: Set rbenv local version (in current directory)
+      ansible.builtin.command: rbenv local {{ ruby_version }}
+      args:
+        chdir: "{{ project_root | default(ansible_env.PWD) }}"
+
+    - name: Install bundler
+      ansible.builtin.gem:
+        name: bundler
+        user_install: yes
+
+    # TODO rails installation
+    - name: Install Rails
+      when: false
+      ansible.builtin.gem:
+        name: rails
+        version: "{{ rails_version | default('~> 7.1') }}" # Example version, make it configurable
+        user_install: false
+
+    - name: Check rails installation
+      when: false
+      ansible.builtin.command: rails --version
+      register: rails_version_check
+      changed_when: false # Don't report as changed if already installed
+
+    - name: Display rails version
+      when: false
+      ansible.builtin.debug:
+        msg: "Rails version: {{ rails_version_check.stdout }}"
+
+- name: Install flatpack
+  ansible.builtin.apt:
+    name:
+      - flatpak
+    state: present
+
+- name: Enable flathub repo
+  become: false
+  ansible.builtin.command: "flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo"
+
+- name: Install podman
+  ansible.builtin.apt:
+    name:
+      - podman
+    state: present
+
+- name: Install podman-desktop
+  become: false
+  ansible.builtin.command: flatpak install -y flathub io.podman_desktop.PodmanDesktop
+
+- name: Install gitnuro (git GUI)
+  become: false
+  ansible.builtin.command: flatpak install -y flathub com.jetpackduba.Gitnuro
+
+# VS Code install
+- name: Install VS Code on Debian/Ubuntu
+  block:
+    - name: Download Microsoft GPG key
+      get_url:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        dest: /usr/share/keyrings/microsoft-archive-keyring.gpg
+        mode: '0644'
+      become: true
+
+    - name: Create VS Code repository file
+      blockinfile: # Use blockinfile for better file management
+        path: /etc/apt/sources.list.d/vscode.list
+        create: yes
+        block: |
+          deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/vscode stable main
+      become: true
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+
+    - name: Install VS Code
+      apt:
+        name: code
+        state: present
+      become: false # TODO local user or root?
+  become: true #redundant but good practice

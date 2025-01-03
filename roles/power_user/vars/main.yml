@@ -1,0 +1,19 @@
+---
+power_user_packages:
+  - btop
+  - bat
+  - curl
+  - exa
+  - fzf
+  - htop
+  - jq
+  - mc
+  - neofetch
+  - rsync
+  - tldr
+  - tmux
+  - tree
+  - unzip
+  - vim-common
+  - wget
+  - zip
