@@ -36,17 +36,19 @@
 - name: Ruby and Rails environment setup
   become: false
   block:
+    - name: Set rbenv root fact
+      ansible.builtin.set_fact:
+        rbenv_root: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
 
     - name: Check if ruby-build is already installed
       ansible.builtin.stat:
-        path: "$(rbenv root)/plugins/ruby-build"
+        path: "{{ rbenv_root }}/plugins/ruby-build"
       register: ruby_build_dir
 
     - name: Install ruby-build
-      ansible.builtin.command:
-        cmd: git clone https://github.com/rbenv/ruby-build.git "{{ lookup('env', 'RBENV_ROOT') }}/plugins/ruby-build"
-      environment:
-        RBENV_ROOT: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
+      ansible.builtin.git:
+        repo: https://github.com/rbenv/ruby-build.git
+        dest: "{{ rbenv_root }}/plugins/ruby-build"
       when: not ruby_build_dir.stat.exists
 
     - name: Ensure rbenv directory exists
