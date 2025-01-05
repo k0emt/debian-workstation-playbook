@@ -96,17 +96,19 @@
         chdir: "{{ project_root | default(ansible_env.PWD) }}"
 
     - name: Install bundler
+      become: false  # No sudo needed for user installation
       ansible.builtin.gem:
         name: bundler
-        user_install: yes
+        user_install: true  # Install in user's home directory
 
     # TODO rails installation
     - name: Install Rails
-      when: false
+      become: false  # No sudo needed for user installation
+      # when: false
       ansible.builtin.gem:
         name: rails
-        version: "{{ rails_version | default('~> 7.1') }}" # Example version, make it configurable
-        user_install: false
+        version: "{{ rails_version | default('~> 7.1') }}"
+        user_install: true  # Install in user's home directory
 
     - name: Check rails installation
       when: false
