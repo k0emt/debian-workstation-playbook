@@ -147,7 +147,7 @@
 
 # VS Code install
 - name: Check if VS Code is installed
-  command: dpkg -l | grep code
+  shell: dpkg -l | grep code
   register: vscode_installed
   ignore_errors: true
   changed_when: false
