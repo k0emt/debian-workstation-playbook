@@ -44,7 +44,9 @@
 
     - name: Install ruby-build
       ansible.builtin.command:
-        cmd: git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
+        cmd: git clone https://github.com/rbenv/ruby-build.git "{{ lookup('env', 'RBENV_ROOT') }}/plugins/ruby-build"
+      environment:
+        RBENV_ROOT: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
       when: not ruby_build_dir.stat.exists
 
     - name: Ensure rbenv directory exists
