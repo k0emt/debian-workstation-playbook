@@ -40,6 +40,23 @@
       ansible.builtin.set_fact:
         rbenv_root: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
 
+    # debug message where trying to install ruby-build
+    - name: Debug message
+      ansible.builtin.debug:
+        msg: "Installing ruby-build in {{ rbenv_root }}/plugins/ruby-build"
+
+    - name: Ensure rbenv directory exists
+      ansible.builtin.file:
+        path: "{{ rbenv_root }}"
+        state: directory
+        mode: 0755
+
+    - name: Ensure rbenv plugins directory exists
+      ansible.builtin.file:
+        path: "{{ rbenv_root }}/plugins"
+        state: directory
+        mode: 0755
+
     - name: Check if ruby-build is already installed
       ansible.builtin.stat:
         path: "{{ rbenv_root }}/plugins/ruby-build"
@@ -50,12 +67,6 @@
         repo: https://github.com/rbenv/ruby-build.git
         dest: "{{ rbenv_root }}/plugins/ruby-build"
       when: not ruby_build_dir.stat.exists
-
-    - name: Ensure rbenv directory exists
-      ansible.builtin.file:
-        path: /home/{{ ansible_user }}/.rbenv
-        state: directory
-        mode: 0755
 
     - name: Add rbenv to .zshrc
       ansible.builtin.lineinfile:
