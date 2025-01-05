@@ -30,9 +30,13 @@
   ansible.builtin.apt:
     name:
       - rbenv
-      - ruby-build
       - ruby-dev
     state: present
+
+- name: Install ruby-build
+  become: true
+  ansible.builtin.command:
+    cmd: git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
 
 - name: Ruby and Rails environment setup
   become: false
