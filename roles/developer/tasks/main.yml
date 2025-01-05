@@ -38,7 +38,8 @@
   block:
     - name: Set rbenv root fact
       ansible.builtin.set_fact:
-        rbenv_root: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
+        rbenv_root: "/home/{{ ansible_user }}/.rbenv"
+          # rbenv_root: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
 
     # debug message where trying to install ruby-build
     - name: Debug message
