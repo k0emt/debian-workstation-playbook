@@ -25,6 +25,15 @@
     state: present
 
 # TODO Ruby and Rails -- move to it's own file?
+- name: Install rbenv
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - rbenv
+      - ruby-build
+      - ruby-dev
+    state: present
+
 - name: Ruby and Rails environment setup
   become: false
   block:
