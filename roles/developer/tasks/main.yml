@@ -101,7 +101,7 @@
         name: bundler
         user_install: true  # Install in user's home directory
 
-    # TODO rails installation
+    # rails installation
     - name: Install Rails
       become: false  # No sudo needed for user installation
       # when: false
@@ -147,7 +147,7 @@
 
 # VS Code install
 - name: Check if VS Code is installed
-  shell: dpkg -l | grep code
+  shell: dpkg -s code | grep "ok installed"
   register: vscode_installed
   ignore_errors: true
   changed_when: false
