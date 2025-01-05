@@ -27,7 +27,7 @@
 # TODO Ruby and Rails -- move to it's own file?
 - name: Install rbenv
   become: true
-  ansible.builtin.dnf:
+  ansible.builtin.apt:
     name:
       - rbenv
       - ruby-build
