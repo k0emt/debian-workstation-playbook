@@ -25,14 +25,49 @@
     state: present
 
 # TODO Ruby and Rails -- move to it's own file?
+- name: Install rbenv
+  become: true
+  ansible.builtin.apt:
+    name:
+      - rbenv
+      - ruby-dev
+    state: present
+
 - name: Ruby and Rails environment setup
   become: false
   block:
+    - name: Set rbenv root fact
+      ansible.builtin.set_fact:
+        rbenv_root: "/home/{{ ansible_user }}/.rbenv"
+          # rbenv_root: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
+
+    # debug message where trying to install ruby-build
+    - name: Debug message
+      ansible.builtin.debug:
+        msg: "Installing ruby-build in {{ rbenv_root }}/plugins/ruby-build"
+
     - name: Ensure rbenv directory exists
       ansible.builtin.file:
-        path: /home/{{ ansible_user }}/.rbenv
+        path: "{{ rbenv_root }}"
         state: directory
         mode: 0755
+
+    - name: Ensure rbenv plugins directory exists
+      ansible.builtin.file:
+        path: "{{ rbenv_root }}/plugins"
+        state: directory
+        mode: 0755
+
+    - name: Check if ruby-build is already installed
+      ansible.builtin.stat:
+        path: "{{ rbenv_root }}/plugins/ruby-build"
+      register: ruby_build_dir
+
+    - name: Install ruby-build
+      ansible.builtin.git:
+        repo: https://github.com/rbenv/ruby-build.git
+        dest: "{{ rbenv_root }}/plugins/ruby-build"
+      when: not ruby_build_dir.stat.exists
 
     - name: Add rbenv to .zshrc
       ansible.builtin.lineinfile:
@@ -61,17 +96,19 @@
         chdir: "{{ project_root | default(ansible_env.PWD) }}"
 
     - name: Install bundler
+      become: false  # No sudo needed for user installation
       ansible.builtin.gem:
         name: bundler
-        user_install: yes
+        user_install: true  # Install in user's home directory
 
-    # TODO rails installation
+    # rails installation
     - name: Install Rails
-      when: false
+      become: false  # No sudo needed for user installation
+      # when: false
       ansible.builtin.gem:
         name: rails
-        version: "{{ rails_version | default('~> 7.1') }}" # Example version, make it configurable
-        user_install: false
+        version: "{{ rails_version | default('~> 7.1') }}"
+        user_install: true  # Install in user's home directory
 
     - name: Check rails installation
       when: false
@@ -109,31 +146,22 @@
   ansible.builtin.command: flatpak install -y flathub com.jetpackduba.Gitnuro
 
 # VS Code install
+- name: Check if VS Code is installed
+  shell: dpkg -s code | grep "ok installed"
+  register: vscode_installed
+  ignore_errors: true
+  changed_when: false
+
 - name: Install VS Code on Debian/Ubuntu
   block:
-    - name: Download Microsoft GPG key
+    - name: Download vs code
       get_url:
-        url: https://packages.microsoft.com/keys/microsoft.asc
-        dest: /usr/share/keyrings/microsoft-archive-keyring.gpg
-        mode: '0644'
-      become: true
+        url: https://go.microsoft.com/fwlink/?LinkID=760868
+        dest: /tmp/vscode.deb
 
-    - name: Create VS Code repository file
-      blockinfile: # Use blockinfile for better file management
-        path: /etc/apt/sources.list.d/vscode.list
-        create: yes
-        block: |
-          deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/vscode stable main
-      become: true
-
-    - name: Update apt cache
+    - name: Install vs code
       apt:
-        update_cache: yes
-      become: true
-
-    - name: Install VS Code
-      apt:
-        name: code
+        deb: /tmp/vscode.deb
         state: present
-      become: false # TODO local user or root?
+  when: vscode_installed.rc != 0 and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   become: true #redundant but good practice
