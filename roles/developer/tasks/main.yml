@@ -109,31 +109,22 @@
   ansible.builtin.command: flatpak install -y flathub com.jetpackduba.Gitnuro
 
 # VS Code install
+- name: Check if VS Code is installed
+  command: dpkg -l | grep code
+  register: vscode_installed
+  ignore_errors: true
+  changed_when: false
+
 - name: Install VS Code on Debian/Ubuntu
   block:
-    - name: Download Microsoft GPG key
+    - name: Download vs code
       get_url:
-        url: https://packages.microsoft.com/keys/microsoft.asc
-        dest: /usr/share/keyrings/microsoft-archive-keyring.gpg
-        mode: '0644'
-      become: true
+        url: https://go.microsoft.com/fwlink/?LinkID=760868
+        dest: /tmp/vscode.deb
 
-    - name: Create VS Code repository file
-      blockinfile: # Use blockinfile for better file management
-        path: /etc/apt/sources.list.d/vscode.list
-        create: yes
-        block: |
-          deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/vscode stable main
-      become: true
-
-    - name: Update apt cache
+    - name: Install vs code
       apt:
-        update_cache: yes
-      become: true
-
-    - name: Install VS Code
-      apt:
-        name: code
+        deb: /tmp/vscode.deb
         state: present
-      become: false # TODO local user or root?
+  when: vscode_installed.rc != 0 and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
   become: true #redundant but good practice
