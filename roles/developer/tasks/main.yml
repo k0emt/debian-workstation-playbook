@@ -33,10 +33,17 @@
       - ruby-dev
     state: present
 
+- name: Check if ruby-build is already installed
+  become: true
+  ansible.builtin.stat:
+    path: "$(rbenv root)/plugins/ruby-build"
+  register: ruby_build_dir
+
 - name: Install ruby-build
   become: true
   ansible.builtin.command:
     cmd: git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
+  when: not ruby_build_dir.stat.exists
 
 - name: Ruby and Rails environment setup
   become: false
