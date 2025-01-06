@@ -122,9 +122,10 @@
     - git_user
     - power_user
     - app_user
-      #- amateur_radio
     - developer
       #- ai_researcher
+      #- LLM researcher - not yet implemented
       #- database_engineer
       #- communicator
+    - amateur_radio
     # - security - not yet implemented

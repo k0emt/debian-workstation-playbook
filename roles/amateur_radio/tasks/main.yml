@@ -1,0 +1,13 @@
+---
+# tasks for installing amateur radio related applications
+- name: Install amateur radio applications
+  become: true
+  ansible.builtin.apt:
+    name:
+      - qrq
+      - openscad
+      - kicad
+      - ngspice
+      - gqrx-sdr
+      - fldigi
+    state: present

@@ -82,11 +82,18 @@
       ansible.builtin.debug:
         msg: Registering ssh keys
 
-    # make sure the ssh agent is running
-    # TODO is there a better way to do this?  Starts up more agents
-    - name: Start ssh agent
+    # Check if ssh-agent is running
+    - name: Check if ssh-agent is running
+      ansible.builtin.shell:
+        cmd: echo $SSH_AGENT_PID
+      register: ssh_agent_pid
+      ignore_errors: true
+
+    # Start ssh-agent if not running
+    - name: Start ssh agent if not running
       ansible.builtin.shell:
         cmd: eval $(ssh-agent -s)
+      when: ssh_agent_pid.stdout == ""
 
     - name: Add new ssh keys to ssh-agent
       ansible.builtin.shell:
