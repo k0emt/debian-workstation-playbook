@@ -104,7 +104,6 @@
     # rails installation
     - name: Install Rails
       become: false  # No sudo needed for user installation
-      # when: false
       ansible.builtin.gem:
         name: rails
         version: "{{ rails_version | default('~> 7.1') }}"
@@ -161,10 +160,12 @@
           https://update.code.visualstudio.com/latest/linux-deb-arm64/stable
           {% elif architecture.stdout == "aarch64" %}
           https://update.code.visualstudio.com/latest/linux-deb-arm64/stable
+          {% elif architecture.stdout == "amd64" %}
+          https://go.microsoft.com/fwlink/?LinkID=760868
           {% else %}
           ""
           {% endif %}
-    
+
     - name: Fail if unsupported architecture
       ansible.builtin.fail:
         msg: "Unsupported architecture: {{ architecture.stdout }}"
@@ -175,9 +176,21 @@
       register: vscode_installed
       ignore_errors: true
       changed_when: false
-    
+
 - name: Install VS Code on Debian/Ubuntu
   block:
+
+    - name: Add amd64 architecture
+      ansible.builtin.command: dpkg --add-architecture amd64
+      become: yes
+      when: architecture.stdout == "arm64"
+
+    - name: Update apt package list
+      ansible.builtin.apt:
+        update_cache: yes
+      become: yes
+      when: architecture.stdout == "arm64"
+    
     - name: Debug message of URL being used
       ansible.builtin.debug:
         msg: "Pulling VS Code from {{ vscode_url }}"
