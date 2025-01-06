@@ -103,6 +103,8 @@ How to do a dry run of the playbook
 ansible-playbook -i localhost, -c local workstation.yml --check --ask-become-pass
 ```
 
+I think at this time running a --check will fail because there are too many things not evaluated which results in lacking settings.
+
 ### Testing with WSL2
 
 - [How to test in a WSL2 instance](wsl2-testing.md)
@@ -117,3 +119,8 @@ Create a VM with a clean instance of your Debian distribution.
 To test your changes, clone down your forked repo.
 Switch to the appropriate branch and test installing it.
 
+### Development and test environments used
+
+Quite a bit of the development and testing of this playbook was done on a Lenovo Duet gen 9 Chromebook.
+Testing and development was also done with a WSL2 instance of Ubuntu.
+Debian Linux running in Gnome Boxes on a Fedora Linux workstation was another test environment.

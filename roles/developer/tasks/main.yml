@@ -180,25 +180,28 @@
 - name: Install VS Code on Debian/Ubuntu
   block:
 
-    - name: Add amd64 architecture
-      ansible.builtin.command: dpkg --add-architecture amd64
+    - name: Add arm64 architecture
+      ansible.builtin.command: dpkg --add-architecture arm64
       become: yes
-      when: architecture.stdout == "arm64"
+      when: architecture.stdout == "arm64" or architecture.stdout == "aarch64"
 
     - name: Update apt package list
       ansible.builtin.apt:
         update_cache: yes
       become: yes
-      when: architecture.stdout == "arm64"
+      when: architecture.stdout == "arm64" or architecture.stdout == "aarch64"
     
     - name: Debug message of URL being used
       ansible.builtin.debug:
-        msg: "Pulling VS Code from {{ vscode_url }}"
+        msg: 
+          - "Architecture {{ architecture.stdout }}"
+          - "Pulling VS Code from {{ vscode_url }}"
 
     - name: Download VS Code
       ansible.builtin.get_url:
         url: "{{ vscode_url }}"
         dest: /tmp/vscode.deb
+        force: true
 
     - name: Install VS Code
       ansible.builtin.apt:

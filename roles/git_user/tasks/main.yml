@@ -83,6 +83,7 @@
         msg: Registering ssh keys
 
     # make sure the ssh agent is running
+    # TODO is there a better way to do this?  Starts up more agents
     - name: Start ssh agent
       ansible.builtin.shell:
         cmd: eval $(ssh-agent -s)
