@@ -68,11 +68,28 @@
     # Loop through the SSH key names and create keys
     - name: Create new ssh keys
       ansible.builtin.shell:
-        cmd: ssh-keygen -t ed25519 -C "{{ git_user_email }}" -f "/home/{{ ansible_user }}/.ssh/id_ed25519_{{ item.name }}" -N "" -q
+        cmd: ssh-keygen -t ed25519 -C "{{ git_user_email }}" -f "/home/{{ ansible_user }}/.ssh/id_ed25519_{{ item }}" -N "" -q
       args:
-        creates: /home/{{ ansible_user }}/.ssh/id_ed25519_{{ item.name }}
+        creates: /home/{{ ansible_user }}/.ssh/id_ed25519_{{ item }}
       loop: "{{ ssh_keys }}"
 
     - name: Debug - After creating new ssh keys
       ansible.builtin.debug:
         msg: Finished creating new ssh keys
+
+    # Add the new SSH keys to the SSH agent
+    - name: Debug - Before registering ssh keys
+      ansible.builtin.debug:
+        msg: Registering ssh keys
+
+    # make sure the ssh agent is running
+    - name: Start ssh agent
+      ansible.builtin.shell:
+        cmd: eval $(ssh-agent -s)
+
+    - name: Add new ssh keys to ssh-agent
+      ansible.builtin.shell:
+        cmd: ssh-add /home/{{ ansible_user }}/.ssh/id_ed25519_{{ target_system }}
+      loop: "{{ ssh_keys }}"
+      loop_control:
+        loop_var: target_system

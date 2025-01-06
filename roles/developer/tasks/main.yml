@@ -146,21 +146,49 @@
   ansible.builtin.command: flatpak install -y flathub com.jetpackduba.Gitnuro
 
 # VS Code install
-- name: Check if VS Code is installed
-  shell: dpkg -s code | grep "ok installed"
-  register: vscode_installed
-  ignore_errors: true
-  changed_when: false
-
 - name: Install VS Code on Debian/Ubuntu
   block:
-    - name: Download vs code
-      get_url:
-        url: https://go.microsoft.com/fwlink/?LinkID=760868
+    - name: Check the system architecture
+      ansible.builtin.command: uname -m
+      register: architecture
+    
+    - name: Set VS Code download URL based on architecture
+      set_fact:
+        vscode_url: >
+          {% if architecture.stdout == "x86_64" %}
+          https://go.microsoft.com/fwlink/?LinkID=760868
+          {% elif architecture.stdout == "arm64" %}
+          https://update.code.visualstudio.com/latest/linux-deb-arm64/stable
+          {% elif architecture.stdout == "aarch64" %}
+          https://update.code.visualstudio.com/latest/linux-deb-arm64/stable
+          {% else %}
+          ""
+          {% endif %}
+    
+    - name: Fail if unsupported architecture
+      ansible.builtin.fail:
+        msg: "Unsupported architecture: {{ architecture.stdout }}"
+      when: vscode_url == ""
+    
+    - name: Check if VS Code is installed
+      shell: dpkg -s code | grep "ok installed"
+      register: vscode_installed
+      ignore_errors: true
+      changed_when: false
+    
+- name: Install VS Code on Debian/Ubuntu
+  block:
+    - name: Debug message of URL being used
+      ansible.builtin.debug:
+        msg: "Pulling VS Code from {{ vscode_url }}"
+
+    - name: Download VS Code
+      ansible.builtin.get_url:
+        url: "{{ vscode_url }}"
         dest: /tmp/vscode.deb
 
-    - name: Install vs code
-      apt:
+    - name: Install VS Code
+      ansible.builtin.apt:
         deb: /tmp/vscode.deb
         state: present
   when: vscode_installed.rc != 0 and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')

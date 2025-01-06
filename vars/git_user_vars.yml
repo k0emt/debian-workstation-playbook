@@ -3,9 +3,9 @@ git_user_email: ""
 
 # Define the SSH key names
 ssh_keys:
-  - name: github
-  - name: gitlab
-  - name: bitbucket
-  - name: aws
-  - name: azure
-  - name: google
+  - github
+  - gitlab
+  - bitbucket
+  - aws
+  - azure
+  - google
