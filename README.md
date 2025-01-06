@@ -15,9 +15,10 @@ Roles that will be setup are:
   - IOSevka fonts installed
 - App User: audacity, OBS studio, gimp,inkscape, krita, hexchat, thunderbird
   - Wallpapers
-- TODO Amateur Radio: QRQ, OpenSCAD, kiCAD
-- WIP Developer: gcc, make, python3, go lang, elixir, rbenv, ruby, rails, podman, podman desktop, VS Code, gitnuro
+- Amateur Radio: QRQ, OpenSCAD, kiCAD, FLDigi, ngspice, GQRX
+- Developer: gcc, make, python3, go lang, elixir, rbenv, ruby, rails, podman, podman desktop, VS Code, gitnuro
 - TODO AI researcher: gcc, git, python3, numpy, pandas, scikit-learn, keras, matplotlib, ggplot, bokeh
+- TODO LLM researcher: ollama, open web ui
 - TODO Database Engineer: pgcli, pgadmin4-desktop, valkey, valkey-doc
 - TODO Communicator: Slack, Discord, Zoom, Edge
 
