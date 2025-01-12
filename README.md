@@ -125,3 +125,11 @@ Switch to the appropriate branch and test installing it.
 Quite a bit of the development and testing of this playbook was done on a Lenovo Duet gen 9 Chromebook.
 Testing and development was also done with a WSL2 instance of Ubuntu.
 Debian Linux running in Gnome Boxes on a Fedora Linux workstation was another test environment.
+
+### TODO items
+
+- revise and break out SSH configuration from git user
+  - needs to add line to .zshrc to load agent and keys
+- refactor ruby installation
+- add roles for ai_researcher, database_engineer, and communicator
+
