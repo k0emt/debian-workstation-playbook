@@ -68,9 +68,9 @@
     # Loop through the SSH key names and create keys
     - name: Create new ssh keys
       ansible.builtin.shell:
-        cmd: ssh-keygen -t ed25519 -C "{{ git_user_email }}" -f "/home/{{ ansible_user }}/.ssh/id_ed25519_{{ item }}" -N "" -q
+        cmd: ssh-keygen -t ed25519 -C "{{ git_user_email }}" -f "/home/{{ ansible_user }}/.ssh/id_ed25519_{{ item }}.pem" -N "" -q
       args:
-        creates: /home/{{ ansible_user }}/.ssh/id_ed25519_{{ item }}
+        creates: /home/{{ ansible_user }}/.ssh/id_ed25519_{{ item }}.pem
       loop: "{{ ssh_keys }}"
 
     - name: Debug - After creating new ssh keys
@@ -81,6 +81,10 @@
     - name: Debug - Before registering ssh keys
       ansible.builtin.debug:
         msg: Registering ssh keys
+
+    # TODO add the following line to .zshrc
+    # eval "$(ssh-agent -s)" > /dev/null 2>&1 && ssh-add ~/.ssh/*.pem > /dev/null 2>&1
+    # TODO is any of the following then necessary?
 
     # Check if ssh-agent is running
     - name: Check if ssh-agent is running
@@ -97,7 +101,7 @@
 
     - name: Add new ssh keys to ssh-agent
       ansible.builtin.shell:
-        cmd: ssh-add /home/{{ ansible_user }}/.ssh/id_ed25519_{{ target_system }}
+        cmd: ssh-add /home/{{ ansible_user }}/.ssh/id_ed25519_{{ target_system }}.pem
       loop: "{{ ssh_keys }}"
       loop_control:
         loop_var: target_system
