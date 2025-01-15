@@ -82,26 +82,37 @@
       ansible.builtin.debug:
         msg: Registering ssh keys
 
-    # TODO add the following line to .zshrc
-    # eval "$(ssh-agent -s)" > /dev/null 2>&1 && ssh-add ~/.ssh/*.pem > /dev/null 2>&1
-    # TODO is any of the following then necessary?
+    # Add ssh-agent autostart to .zshrc
+    - name: Add ssh-agent configuration to .zshrc
+      ansible.builtin.blockinfile:
+        path: "/home/{{ ansible_user }}/.zshrc"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - SSH AGENT CONFIGURATION"
+        block: |
+          # Start ssh-agent and add keys
+          if [ -z "$SSH_AUTH_SOCK" ]; then
+            eval "$(ssh-agent -s)" > /dev/null 2>&1
+            find ~/.ssh -type f -name "*.pem" -exec ssh-add {} \; > /dev/null 2>&1
+          fi
+        create: yes
+        mode: '0644'
 
-    # Check if ssh-agent is running
-    - name: Check if ssh-agent is running
-      ansible.builtin.shell:
-        cmd: echo $SSH_AGENT_PID
-      register: ssh_agent_pid
-      ignore_errors: true
+    # Start SSH agent and capture environment
+    - name: Ensure ssh-agent is running
+      ansible.builtin.shell: |
+        if [ -z "$SSH_AUTH_SOCK" ]; then
+          eval "$(ssh-agent -s)"
+        fi
+        echo "$SSH_AUTH_SOCK"
+      register: ssh_agent_sock
+      changed_when: false
 
-    # Start ssh-agent if not running
-    - name: Start ssh agent if not running
-      ansible.builtin.shell:
-        cmd: eval $(ssh-agent -s)
-      when: ssh_agent_pid.stdout == ""
-
-    - name: Add new ssh keys to ssh-agent
-      ansible.builtin.shell:
-        cmd: ssh-add /home/{{ ansible_user }}/.ssh/id_ed25519_{{ target_system }}.pem
+    # Add SSH keys
+    - name: Add SSH keys to agent
+      ansible.builtin.shell: ssh-add ~/.ssh/id_ed25519_{{ item }}.pem
+      environment:
+        SSH_AUTH_SOCK: "{{ ssh_agent_sock.stdout_lines[-1] }}"
       loop: "{{ ssh_keys }}"
-      loop_control:
-        loop_var: target_system
+      register: add_key_result
+      changed_when: add_key_result.rc == 0
+      failed_when: false
+      ignore_errors: true
