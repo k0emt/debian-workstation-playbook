@@ -1,0 +1,28 @@
+---
+# tasks for database engineer role
+# probably wouldn't install any of the servers, but rather use them in podman containers
+# I do however, want the client software for postgresql, mysql, redis, and mongodb (like mongosh)
+
+- name: Install database clients and tools
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - pgcli
+      - mycli
+      - valkey
+      - valkey-doc
+    state: present
+
+# add repository for pgadmin4
+- name: Add pgadmin4 repository
+  become: true
+  ansible.builtin.command:
+    cmd: dnf install -y https://ftp.postgresql.org/pub/pgadmin/pgadmin4/yum/pgadmin4-fedora-repo-2-1.noarch.rpm
+
+- name: Install pgadmin4
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - pgadmin4
+      - pgadmin4-desktop
+    state: present
