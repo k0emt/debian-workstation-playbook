@@ -58,6 +58,15 @@ sudo apt install ansible
 ansible-playbook -i localhost, -c local workstation.yml --ask-become-pass
 ```
 
+### Amateur Radio playbook
+
+The amateur radio role has its own separate playbook.
+To install amateur radio applications, run:
+
+```shell
+ansible-playbook -i localhost, -c local amateur_radio.yml --ask-become-pass
+```
+
 ### Gotchas
 
 If you have already enrolled a fingerprint,
