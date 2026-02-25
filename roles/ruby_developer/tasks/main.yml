@@ -52,6 +52,17 @@
         line: eval "$(rbenv init -)"
       notify: Reload zsh
 
+    - name: Check if .bashrc exists
+      ansible.builtin.stat:
+        path: /home/{{ ansible_user }}/.bashrc
+      register: bashrc_file
+
+    - name: Add rbenv to .bashrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.bashrc
+        regexp: ^eval "\$\(rbenv init -\)"
+        line: eval "$(rbenv init -)"
+      when: bashrc_file.stat.exists
     - name: Install ruby
       ansible.builtin.command: rbenv install {{ ruby_version }}
       args:
