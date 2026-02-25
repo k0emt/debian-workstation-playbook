@@ -89,6 +89,7 @@
       environment:
         RBENV_ROOT: "{{ rbenv_root }}"
         PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
+      changed_when: false
 
     # rails installation
     - name: Install Rails
