@@ -80,7 +80,7 @@
     - name: Set rbenv local version (in current directory)
       ansible.builtin.command: rbenv local {{ ruby_version }}
       args:
-        chdir: "{{ project_root | default('/home/' + ansible_user) }}"
+        chdir: "{{ project_root | default(ansible_env.PWD) }}"
 
     - name: Install bundler
       become: false  # No sudo needed for user installation
