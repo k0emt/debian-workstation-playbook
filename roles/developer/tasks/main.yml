@@ -150,6 +150,18 @@
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
       notify: Reload zsh
 
+    - name: Install latest two Node.js LTS versions via nvm
+      ansible.builtin.shell: |
+        export NVM_DIR="/home/{{ ansible_user }}/.nvm"
+        source "$NVM_DIR/nvm.sh"
+        nvm install --lts
+        LATEST_MAJOR=$(nvm version-remote --lts | cut -d. -f1 | tr -d 'v')
+        PREV_MAJOR=$((LATEST_MAJOR - 2))
+        nvm install "v${PREV_MAJOR}"
+      args:
+        executable: /bin/bash
+      changed_when: false
+
 - name: Install flatpack
   ansible.builtin.apt:
     name:
