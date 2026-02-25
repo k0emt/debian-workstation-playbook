@@ -73,18 +73,28 @@
 
     - name: Install bundler
       become: false  # No sudo needed for user installation
-      ansible.builtin.gem:
-        name: bundler
-        user_install: true  # Install in user's home directory
+      ansible.builtin.shell: |
+        rbenv exec gem install bundler
+      environment:
+        RBENV_ROOT: "{{ rbenv_root }}"
+        PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
 
     # rails installation
     - name: Install Rails
       become: false  # No sudo needed for user installation
-      ansible.builtin.gem:
-        name: rails
-        version: "{{ rails_version | default('~> 7.1') }}"
-        user_install: true  # Install in user's home directory
+      ansible.builtin.shell: |
+        rbenv exec gem install rails -v "{{ rails_version | default('~> 7.1') }}"
+      environment:
+        RBENV_ROOT: "{{ rbenv_root }}"
+        PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
 
+    - name: Rehash rbenv shims
+      become: false
+      ansible.builtin.shell: |
+        rbenv rehash
+      environment:
+        RBENV_ROOT: "{{ rbenv_root }}"
+        PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
     - name: Check rails installation
       when: false
       ansible.builtin.command: rails --version
