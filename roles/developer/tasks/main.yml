@@ -129,9 +129,16 @@
         path: "/home/{{ ansible_user }}/.nvm/nvm.sh"
       register: nvm_installed
 
+    - name: Get latest nvm release version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/nvm-sh/nvm/releases/latest
+        return_content: true
+      register: nvm_latest_release
+      when: not nvm_installed.stat.exists
+
     - name: Download nvm install script
       ansible.builtin.get_url:
-        url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh"
+        url: "https://raw.githubusercontent.com/nvm-sh/nvm/{{ nvm_latest_release.json.tag_name }}/install.sh"
         dest: /tmp/nvm_install.sh
         mode: '0755'
       when: not nvm_installed.stat.exists
