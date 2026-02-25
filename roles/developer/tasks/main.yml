@@ -120,6 +120,36 @@
       ansible.builtin.debug:
         msg: "Rails version: {{ rails_version_check.stdout }}"
 
+# NVM node version manager
+- name: NVM node version manager setup
+  become: false
+  block:
+    - name: Check if nvm is already installed
+      ansible.builtin.stat:
+        path: "/home/{{ ansible_user }}/.nvm/nvm.sh"
+      register: nvm_installed
+
+    - name: Download nvm install script
+      ansible.builtin.get_url:
+        url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh"
+        dest: /tmp/nvm_install.sh
+        mode: '0755'
+      when: not nvm_installed.stat.exists
+
+    - name: Install nvm
+      ansible.builtin.command: bash /tmp/nvm_install.sh
+      when: not nvm_installed.stat.exists
+
+    - name: Add nvm initialization to .zshrc
+      ansible.builtin.blockinfile:
+        path: "/home/{{ ansible_user }}/.zshrc"
+        marker: "# {mark} NVM ANSIBLE MANAGED BLOCK"
+        block: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+      notify: Reload zsh
+
 - name: Install flatpack
   ansible.builtin.apt:
     name:
