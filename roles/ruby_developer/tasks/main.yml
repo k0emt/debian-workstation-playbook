@@ -96,12 +96,12 @@
         RBENV_ROOT: "{{ rbenv_root }}"
         PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
     - name: Check rails installation
-      when: false
+      when: ruby_developer_debug | default(false)
       ansible.builtin.command: rails --version
       register: rails_version_check
       changed_when: false # Don't report as changed if already installed
 
     - name: Display rails version
-      when: false
+      when: ruby_developer_debug | default(false)
       ansible.builtin.debug:
         msg: "Rails version: {{ rails_version_check.stdout }}"
