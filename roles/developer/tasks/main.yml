@@ -161,10 +161,11 @@
       ansible.builtin.shell: |
         export NVM_DIR="/home/{{ ansible_user }}/.nvm"
         source "$NVM_DIR/nvm.sh"
-        nvm install --lts
-        LATEST_MAJOR=$(nvm version-remote --lts | cut -d. -f1 | tr -d 'v')
-        PREV_MAJOR=$((LATEST_MAJOR - 2))
-        nvm install "v${PREV_MAJOR}"
+        # Get the last two Node.js LTS versions from nvm and install them
+        LTS_VERSIONS=$(nvm ls-remote --lts | awk '{print $1}' | sed 's/^->//' | tail -n 2)
+        for v in $LTS_VERSIONS; do
+          nvm install "$v"
+        done
       args:
         executable: /bin/bash
       changed_when: false
