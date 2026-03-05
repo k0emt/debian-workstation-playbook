@@ -1,0 +1,152 @@
+---
+# tasks for ruby_developer role
+- name: Install rbenv
+  become: true
+  ansible.builtin.apt:
+    name:
+      - rbenv
+      - ruby-dev
+      - git
+    state: present
+
+- name: Ruby and Rails environment setup
+  become: false
+  block:
+    - name: Set rbenv root fact
+      ansible.builtin.set_fact:
+        rbenv_root: "/home/{{ ansible_user }}/.rbenv"
+          # rbenv_root: "{{ lookup('env', 'RBENV_ROOT') | default('/home/' + ansible_user + '/.rbenv') }}"
+
+    # debug message where trying to install ruby-build
+    - name: Debug message
+      ansible.builtin.debug:
+        msg: "Installing ruby-build in {{ rbenv_root }}/plugins/ruby-build"
+
+    - name: Ensure rbenv directory exists
+      ansible.builtin.file:
+        path: "{{ rbenv_root }}"
+        state: directory
+        mode: "0755"
+
+    - name: Ensure rbenv plugins directory exists
+      ansible.builtin.file:
+        path: "{{ rbenv_root }}/plugins"
+        state: directory
+        mode: "0755"
+
+    - name: Check if ruby-build is already installed
+      ansible.builtin.stat:
+        path: "{{ rbenv_root }}/plugins/ruby-build"
+      register: ruby_build_dir
+
+    - name: Install ruby-build
+      ansible.builtin.git:
+        repo: https://github.com/rbenv/ruby-build.git
+        dest: "{{ rbenv_root }}/plugins/ruby-build"
+      when: not ruby_build_dir.stat.exists
+
+    - name: Check if .zshrc exists
+      ansible.builtin.stat:
+        path: /home/{{ ansible_user }}/.zshrc
+      register: zshrc_file
+
+    - name: Add rbenv to .zshrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.zshrc
+        regexp: ^eval "\$\(rbenv init -\)"
+        line: eval "$(rbenv init -)"
+        create: true
+      notify: Reload zsh
+
+    - name: Notify user that .zshrc was created
+      ansible.builtin.debug:
+        msg: ".zshrc did not exist and was created. You may want to add your personal shell customizations to it."
+      when: not zshrc_file.stat.exists
+
+    - name: Check if .bashrc exists
+      ansible.builtin.stat:
+        path: /home/{{ ansible_user }}/.bashrc
+      register: bashrc_file
+
+    - name: Add rbenv to .bashrc
+      ansible.builtin.lineinfile:
+        path: /home/{{ ansible_user }}/.bashrc
+        regexp: ^eval "\$\(rbenv init -\)"
+        line: eval "$(rbenv init -)"
+      notify: Reload bash
+      when: bashrc_file.stat.exists
+
+    - name: Gather package facts for prerequisite check
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Verify build prerequisites are installed
+      ansible.builtin.assert:
+        that:
+          - "'gcc' in ansible_facts.packages"
+          - "'make' in ansible_facts.packages"
+          - "'libssl-dev' in ansible_facts.packages"
+          - "'libreadline-dev' in ansible_facts.packages"
+          - "'zlib1g-dev' in ansible_facts.packages"
+        fail_msg: >-
+          Required build prerequisites are missing (gcc, make, libssl-dev, libreadline-dev, zlib1g-dev).
+          Please run the workstation.yml playbook first to install the necessary development tools,
+          then re-run this playbook.
+        success_msg: "All required build prerequisites are present."
+
+    - name: Install ruby
+      ansible.builtin.command: rbenv install {{ ruby_version }}
+      args:
+        creates: /home/{{ ansible_user }}/.rbenv/versions/{{ ruby_version }}
+      register: ruby_install_result
+
+    - name: Check for ruby installation failure
+      ansible.builtin.fail:
+        msg: "Ruby installation failed: {{ ruby_install_result }}"
+      when: ruby_install_result.rc != 0
+
+    - name: Set global ruby version
+      ansible.builtin.command: rbenv global {{ ruby_version }}
+
+    - name: Set rbenv local version (in current directory)
+      ansible.builtin.command: rbenv local {{ ruby_version }}
+      args:
+        chdir: "{{ project_root | default(ansible_env.PWD) }}"
+
+    - name: Install bundler
+      become: false  # No sudo needed for user installation
+      ansible.builtin.shell: |
+        rbenv exec gem install bundler
+      environment:
+        RBENV_ROOT: "{{ rbenv_root }}"
+        PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
+      changed_when: false
+
+    # rails installation
+    - name: Install Rails
+      become: false  # No sudo needed for user installation
+      ansible.builtin.shell: |
+        rbenv exec gem install rails -v "{{ rails_version | default('~> 7.1') }}"
+      environment:
+        RBENV_ROOT: "{{ rbenv_root }}"
+        PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
+      changed_when: false
+
+    - name: Rehash rbenv shims
+      become: false
+      ansible.builtin.shell: |
+        rbenv rehash
+      environment:
+        RBENV_ROOT: "{{ rbenv_root }}"
+        PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
+
+    - name: Check rails installation
+      when: ruby_developer_debug | default(false)
+      ansible.builtin.command: rails --version
+      register: rails_version_check
+      changed_when: false # Don't report as changed if already installed
+
+    - name: Display rails version
+      when: ruby_developer_debug | default(false)
+      ansible.builtin.debug:
+        msg: "Rails version: {{ rails_version_check.stdout }}"

@@ -1,4 +1,2 @@
----
-# handler to Reload zsh configuration
-- name: Reload zsh
-  ansible.builtin.command: zsh -ic "source /home/{{ ansible_user }}/.zshrc"
+# Handlers intentionally left empty for the 'developer' role.
+# This file is kept to preserve the role directory structure.

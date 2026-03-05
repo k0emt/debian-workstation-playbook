@@ -39,6 +39,12 @@
         - name: Handle Git config check failure
           ansible.builtin.debug:
             msg: Failed to check existing Git configuration. Will continue with setup.
+
+        - name: Initialize git config with empty values
+          ansible.builtin.set_fact:
+            existing_git_config:
+              username: ""
+              email: ""
       always:
         - name: Ensure git config check completed
           ansible.builtin.debug:
@@ -94,6 +100,11 @@
           ansible.builtin.set_fact:
             git_user_email: "{{ git_email_input.user_input }}"
           when: needs_email_config
+
+        - name: Use existing Git user email
+          ansible.builtin.set_fact:
+            git_user_email: "{{ existing_git_config.email }}"
+          when: not needs_email_config
 
         - name: Configure Git user email
           community.general.git_config:
