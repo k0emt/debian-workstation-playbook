@@ -151,24 +151,53 @@
       ansible.builtin.blockinfile:
         path: "/home/{{ ansible_user }}/.zshrc"
         marker: "# {mark} NVM ANSIBLE MANAGED BLOCK"
+        create: true
         block: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
       notify: Reload zsh
 
+    - name: Add nvm initialization to .bashrc
+      ansible.builtin.blockinfile:
+        path: "/home/{{ ansible_user }}/.bashrc"
+        marker: "# {mark} NVM ANSIBLE MANAGED BLOCK"
+        create: true
+        block: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+    - name: Get installed Node.js LTS versions
+      ansible.builtin.shell: |
+        export NVM_DIR="/home/{{ ansible_user }}/.nvm"
+        source "$NVM_DIR/nvm.sh"
+        nvm ls --no-colors 2>/dev/null || true
+      args:
+        executable: /bin/bash
+      register: nvm_installed_versions
+      changed_when: false
+
+    - name: Get latest two Node.js LTS versions available
+      ansible.builtin.shell: |
+        export NVM_DIR="/home/{{ ansible_user }}/.nvm"
+        source "$NVM_DIR/nvm.sh"
+        nvm ls-remote --lts --no-colors | awk '{print $1}' | grep -E '^v[0-9]' | tail -n 2
+      args:
+        executable: /bin/bash
+      register: nvm_lts_versions
+      changed_when: false
+
     - name: Install latest two Node.js LTS versions via nvm
       ansible.builtin.shell: |
         export NVM_DIR="/home/{{ ansible_user }}/.nvm"
         source "$NVM_DIR/nvm.sh"
-        # Get the last two Node.js LTS versions from nvm and install them
-        LTS_VERSIONS=$(nvm ls-remote --lts | awk '{print $1}' | sed 's/^->//' | tail -n 2)
-        for v in $LTS_VERSIONS; do
-          nvm install "$v"
-        done
+        nvm install {{ item }}
       args:
         executable: /bin/bash
-      changed_when: false
+      loop: "{{ nvm_lts_versions.stdout_lines }}"
+      when: item not in nvm_installed_versions.stdout
+      changed_when: true
 
 - name: Install flatpack
   ansible.builtin.apt:
