@@ -1,4 +1,11 @@
 ---
-# handler to Reload zsh configuration
+# handlers to reload shell configurations
 - name: Reload zsh
-  ansible.builtin.command: zsh -ic "source /home/{{ ansible_user }}/.zshrc"
+  become: false
+  ansible.builtin.shell: command -v zsh >/dev/null 2>&1 && zsh -ic "source /home/{{ ansible_user }}/.zshrc" || true
+  changed_when: false
+
+- name: Reload bash
+  become: false
+  ansible.builtin.shell: command -v bash >/dev/null 2>&1 && bash -ic "source /home/{{ ansible_user }}/.bashrc" || true
+  changed_when: false

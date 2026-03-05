@@ -45,6 +45,11 @@
         dest: "{{ rbenv_root }}/plugins/ruby-build"
       when: not ruby_build_dir.stat.exists
 
+    - name: Check if .zshrc exists
+      ansible.builtin.stat:
+        path: /home/{{ ansible_user }}/.zshrc
+      register: zshrc_file
+
     - name: Add rbenv to .zshrc
       ansible.builtin.lineinfile:
         path: /home/{{ ansible_user }}/.zshrc
@@ -52,6 +57,11 @@
         line: eval "$(rbenv init -)"
         create: true
       notify: Reload zsh
+
+    - name: Notify user that .zshrc was created
+      ansible.builtin.debug:
+        msg: ".zshrc did not exist and was created. You may want to add your personal shell customizations to it."
+      when: not zshrc_file.stat.exists
 
     - name: Check if .bashrc exists
       ansible.builtin.stat:
@@ -63,7 +73,27 @@
         path: /home/{{ ansible_user }}/.bashrc
         regexp: ^eval "\$\(rbenv init -\)"
         line: eval "$(rbenv init -)"
+      notify: Reload bash
       when: bashrc_file.stat.exists
+
+    - name: Gather package facts for prerequisite check
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Verify build prerequisites are installed
+      ansible.builtin.assert:
+        that:
+          - "'gcc' in ansible_facts.packages"
+          - "'make' in ansible_facts.packages"
+          - "'libssl-dev' in ansible_facts.packages"
+          - "'libreadline-dev' in ansible_facts.packages"
+          - "'zlib1g-dev' in ansible_facts.packages"
+        fail_msg: >-
+          Required build prerequisites are missing (gcc, make, libssl-dev, libreadline-dev, zlib1g-dev).
+          Please run the workstation.yml playbook first to install the necessary development tools,
+          then re-run this playbook.
+        success_msg: "All required build prerequisites are present."
+
     - name: Install ruby
       ansible.builtin.command: rbenv install {{ ruby_version }}
       args:
@@ -100,6 +130,7 @@
       environment:
         RBENV_ROOT: "{{ rbenv_root }}"
         PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
+      changed_when: false
 
     - name: Rehash rbenv shims
       become: false
@@ -108,6 +139,7 @@
       environment:
         RBENV_ROOT: "{{ rbenv_root }}"
         PATH: "{{ rbenv_root }}/bin:{{ rbenv_root }}/shims:{{ ansible_env.PATH }}"
+
     - name: Check rails installation
       when: ruby_developer_debug | default(false)
       ansible.builtin.command: rails --version
