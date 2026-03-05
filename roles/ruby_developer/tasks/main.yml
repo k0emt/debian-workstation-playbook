@@ -50,6 +50,7 @@
         path: /home/{{ ansible_user }}/.zshrc
         regexp: ^eval "\$\(rbenv init -\)"
         line: eval "$(rbenv init -)"
+        create: true
       notify: Reload zsh
 
     - name: Check if .bashrc exists
