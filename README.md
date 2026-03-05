@@ -16,7 +16,7 @@ Roles that will be setup are:
 - App User: audacity, OBS studio, gimp,inkscape, krita, hexchat, thunderbird
   - Wallpapers
 - Amateur Radio: QRQ, OpenSCAD, kiCAD, FLDigi, ngspice, GQRX
-- Developer: gcc, make, python3, go lang, elixir, rbenv, ruby, rails, podman, podman desktop, VS Code, gitnuro
+- Developer: gcc, make, python3, go lang, elixir, rbenv, ruby, rails, nvm, podman, podman desktop, VS Code, gitnuro
 - TODO AI researcher: gcc, git, python3, numpy, pandas, scikit-learn, keras, matplotlib, ggplot, bokeh
 - TODO LLM researcher: ollama, open web ui
 - TODO Database Engineer: pgcli, pgadmin4-desktop, valkey, valkey-doc
@@ -90,8 +90,6 @@ Run `p10k configure` in a new terminal if you aren't prompted to set up powerlev
 ### Manual installs
 
 [postgresql server](https://www.postgresql.org/download/linux/debian/) if you want a local server
-
-[nvm](https://github.com/nvm-sh/nvm) node version manager
 
 [SDKMAN!](sdkman.io/install) for JVM developers
 
